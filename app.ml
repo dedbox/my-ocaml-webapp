@@ -4,9 +4,9 @@ open Incr_dom
 open Incr.Let_syntax
 
 module Model = struct
-  type t = string
+  type t = int
 
-  let cutoff = phys_equal
+  let cutoff = ( = )
 end
 
 module State = struct
@@ -14,14 +14,17 @@ module State = struct
 end
 
 module Action = struct
-  type t = Nothing.t [@@deriving sexp]
+  type t = Increment [@@deriving sexp]
 end
 
-let on_startup ~schedule_action:_ _model = Deferred.unit
+let on_startup ~schedule_action _model =
+  every (Time_ns.Span.of_sec 1.) (fun () -> schedule_action Action.Increment);
+  Deferred.unit
 
 let create model ~old_model:_ ~inject:_ =
-  let%map message = model in
+  let%map counter = model in
   let apply_action action _ ~schedule_action:_ =
-    Nothing.unreachable_code action
+    match action with Action.Increment -> counter + 1
   in
-  Component.create ~apply_action message @@ Vdom.Node.text message
+  Component.create ~apply_action counter
+    (Vdom.Node.text @@ Int.to_string counter)
