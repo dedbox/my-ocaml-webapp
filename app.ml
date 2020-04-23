@@ -2,6 +2,7 @@ open Core_kernel
 open Async_kernel
 open Incr_dom
 open Incr.Let_syntax
+module Js = Js_of_ocaml.Js
 
 module Model = struct
   type t = int
@@ -14,7 +15,7 @@ module State = struct
 end
 
 module Action = struct
-  type t = Increment | Toggle [@@deriving sexp]
+  type t = Increment | Key of string [@@deriving sexp]
 end
 
 open Action
@@ -28,12 +29,21 @@ let create model ~old_model:_ ~inject =
   let apply_action action is_active ~schedule_action:_ =
     match action with
     | Increment -> if !is_active then counter + 1 else counter
-    | Toggle ->
+    | Key " " ->
         is_active := not !is_active;
         counter
+    | Key _ -> counter
   and view =
     let open Vdom.Node in
     let open Vdom.Attr in
-    div [ on_click (fun _ -> inject Toggle) ] [ text (Int.to_string counter) ]
+    let make_key event =
+      Key
+        ( match Js.Optdef.to_option event##.key with
+        | Some jstr -> Js.to_string jstr
+        | None -> "" )
+    in
+    div
+      [ on_keypress (fun event -> inject (make_key event)) ]
+      [ text (Int.to_string counter) ]
   in
   Component.create ~apply_action counter view
