@@ -1,9 +1,8 @@
+open Ast
 open Core_kernel
 open Incr_dom
 
-type t = t' list
-
-and t' = Text of string | Cursor | Newline
+type t = Ast.t list
 
 let empty = [ Cursor ]
 
