@@ -5,9 +5,9 @@ open Incr.Let_syntax
 module Js = Js_of_ocaml.Js
 
 module Model = struct
-  type t = Textbuf.t
+  type t = Editor.t
 
-  let cutoff = Textbuf.equal
+  let cutoff = Editor.equal
 end
 
 module State = struct
@@ -27,9 +27,9 @@ let create model ~old_model:_ ~inject =
   let%map buf = model in
   let apply_action action _state ~schedule_action:_ =
     match action with
-    | Append str -> Textbuf.append str buf
-    | Backspace -> Textbuf.backspace buf
-    | Newline -> Textbuf.newline buf
+    | Append str -> Editor.append str buf
+    | Backspace -> Editor.backspace buf
+    | Newline -> Editor.newline buf
     | InvalidKey -> buf
   and view =
     let open Vdom.Node in
@@ -47,6 +47,6 @@ let create model ~old_model:_ ~inject =
     in
     div
       [ on_keydown (fun event -> inject @@ make_action event) ]
-      (Textbuf.nodes buf)
+      (Editor.nodes buf)
   in
   Component.create ~apply_action buf view
